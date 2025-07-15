@@ -17,6 +17,11 @@ Login to `lxplus`. Ensure that your working directory has enough disk space. Cop
 > ```bash
 > voms-proxy-init --voms cms
 > ```
+Get the files in an lxplus work area.
+```bash
+wget https://github.com/phazarik/tools/releases/download/lxplus-v1.0/makelist.py
+wget https://github.com/phazarik/tools/releases/download/lxplus-v1.0/xrdcp_files.py
+```
 
 ### 🔹Step 1: Make a list
 Edit the `das_names` list inside `makelist.py` to include the datasets you want.

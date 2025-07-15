@@ -27,7 +27,11 @@ cmsenv
 > voms-proxy-init --voms cms
 > ```
 
-Place the scripts in `src`. Then:
+Place the scripts in `src`.
+```bash
+wget https://github.com/phazarik/tools/releases/download/lxplus-v1.0/bulksubmission.py
+wget https://github.com/phazarik/tools/releases/download/lxplus-v1.0/find_xsec_fromDAS.py
+```
 
 ### 🔹Process a single dataset
 ```bash
