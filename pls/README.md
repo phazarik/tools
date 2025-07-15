@@ -6,7 +6,7 @@ A Python-based alternative to the `ls` command, designed for better readability 
 
 > **Advantage over `ls`:**   On WSL, especially when accessing mounted Windows partitions (e.g., `/mnt/c/...`), native `ls --color=tty` may fail to render colors due to permission inconsistencies. `pls` fixes that. Also it supports mutliple directory paths at once.
 
-![pls usage demo](../images/pls-usage.png)
+![Usage Example](../.github/images/pls-usage.png)
 
 ## ✨ Features
 - 🎨 Customizable styling via the `STYLE` dictionary (color + emoji)
