@@ -30,11 +30,10 @@ wget https://github.com/phazarik/tools/releases/download/lxplus-v1.0/xrdcp_files
 
 ---
 
-### [pls](pls/README.md) ![For All](https://img.shields.io/badge/For--All-green)
+### [pls](pls/README.md) 
 
 
-A terminal-friendly replacement for the `ls` command, with support for emojis, color themes, and file-type awareness.  
-Especially useful on mounted file systems in WSL or in environments where `ls --color` does not render properly.
+A terminal-friendly replacement for the `ls` command, with support for emojis, color themes, and file-type awareness. Especially useful on mounted file systems in WSL or in environments where `ls --color` does not render properly.
 
 ![Usage Example](.github/images/pls-usage.png)
 
