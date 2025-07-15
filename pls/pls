@@ -1,0 +1,354 @@
+#!/usr/bin/env python3
+
+# =============================================================================
+# Copyright (c) 2025 Prachurjya Hazarika
+# All rights reserved.
+#
+# Developed at IISER Pune
+# Contact: prachurjyahazarika@gmail.com, github.com/phazarik
+# =============================================================================
+
+# Basic usage:
+#   pls                → list files and directories in columns
+#   pls -a             → include hidden files
+#   pls -l             → show detailed listing with sizes
+#   pls -al            → combine -a and -l flags
+#   pls --filter root  → show only files with 'root' in their extension
+#   pls --sortby n     → sort by alphanumberic (n) or size
+
+# === Requirements & Installation ===
+
+# Requirements:
+# - Python 3.x
+# - Standard library modules: os, argparse, shutil, re
+# - External module: wcwidth
+#   Install with: pip install wcwidth
+
+# Installation (Unix/Linux/WSL):
+# 1. Move the script to your home directory:
+#    mv pls.py ~/pls
+# 2. Make it executable:
+#    chmod +x ~/pls
+# 3. Create a symbolic link:
+#    sudo ln -sf "$HOME/pls" /usr/local/bin/pls
+# Now you can run it using: pls
+
+# Optional (Emoji support in Emacs):
+# Add this to your ~/.emacs file:
+# (set-fontset-font t 'unicode "Noto Color Emoji" nil 'append)
+# Make sure the "Noto Color Emoji" font is installed.
+
+# Optional: Add the following in your ~/.bashrc file to replace the `ls` command:
+# alias ls='pls'
+
+import os, sys, glob
+import argparse
+import shutil, re
+import pwd, stat, time, grp
+from wcwidth import wcswidth #Extra
+
+# === ANSI STYLE CODES ===
+# 0  DEFAULT        : Reset all styles and colors
+# 1  BOLD           : Bold text
+# 2  DIM            : Faint/dim text
+# 3  ITALIC         : Italic text
+# 4  UNDERLINE      : Underlined text
+# 5  BLINK          : Blinking text
+# 7  INVERT         : Reverse foreground/background
+# 8  HIDDEN         : Concealed (invisible) text
+# 9  STRIKETHROUGH  : Strike-through text
+
+DEFAULT        = '\033[0m'
+BOLD           = '\033[1m'
+DIM            = '\033[2m'
+ITALIC         = '\033[3m'
+UNDERLINE      = '\033[4m'
+BLINK          = '\033[5m'
+INVERT         = '\033[7m'
+HIDDEN         = '\033[8m'
+STRIKETHROUGH  = '\033[9m'
+
+# === ANSI COLOR CODES ===
+# These codes are used for foreground text coloring.
+# Format: \033[<style>;<color>m
+# Style:  0 = normal, 1 = bold, etc.
+# Color codes:
+#   30: Black        90: Bright Black (Gray)
+#   31: Red          91: Bright Red
+#   32: Green        92: Bright Green
+#   33: Yellow       93: Bright Yellow
+#   34: Blue         94: Bright Blue
+#   35: Magenta      95: Bright Magenta
+#   36: Cyan         96: Bright Cyan
+#   37: White        97: Bright White
+
+BLUE_BOLD      = '\033[1;34m'
+CYAN           = '\033[0;36m'
+GRAY_DIM       = '\033[0;90m'
+GRAY_ITALIC    = '\033[3;90m'
+GRAY_LIGHT     = '\033[0;37m'
+GREEN          = '\033[0;32m'
+GREEN_BOLD     = '\033[1;32m'
+MAGENTA_BOLD   = '\033[1;35m'
+RED_BOLD       = '\033[1;31m'
+YELLOW         = '\033[0;33m'
+YELLOW_BOLD    = '\033[0;93m'
+
+# === Global styles ===
+DIR_COLOR       = BLUE_BOLD 
+DIR_ICON        = '📁'
+TMP_COLOR       = GRAY_ITALIC
+TMP_ICON        = '🧹'
+HID_DIR_COLOR   = '\033[03;94m'
+HID_FILE_COLOR  = GRAY_DIM
+HID_FILE_ICON   = '🙈'
+UNK_FILE_ICON   = '📃'
+
+# === Custom file type styles ===
+STYLE = {
+    # Code / Scripts
+    '.sh':     {'color': BOLD, 'icon': '🐍'},
+    '.py':     {'color': BOLD, 'icon': '🐍'},
+    '.ipynb':  {'color': BOLD, 'icon': '📔'},
+    '.C':      {'color': BOLD, 'icon': '⚙️'},
+    '.cpp':    {'color': BOLD, 'icon': '⚙️'},
+    '.h':      {'color': BOLD, 'icon': '🧩'},
+
+    # Machine level objects
+    '.so':     {'color': GRAY_DIM, 'icon': '🛠️'},
+    '.d':      {'color': GRAY_DIM, 'icon': '🛠️'},
+    '.pcm':    {'color': GRAY_DIM, 'icon': '🛠️'},
+    '.o':      {'color': GRAY_DIM, 'icon': '🛠️'},
+    '.a':      {'color': GRAY_DIM, 'icon': '🛠️'},
+    '.pyc':    {'color': GRAY_DIM, 'icon': '🛠️'},
+    '.class':  {'color': GRAY_DIM, 'icon': '🛠️'},
+
+    # Config / Metadata / Data
+    '.json':   {'color': GRAY_LIGHT, 'icon': '🧾'},
+    '.txt':    {'color': GRAY_LIGHT, 'icon': '📄'},
+    '.db':     {'color': GRAY_LIGHT, 'icon': '🗄️'},
+    '.pkl':    {'color': GRAY_LIGHT, 'icon': '🎁'},
+    '.adl':    {'color': GRAY_LIGHT, 'icon': '🧾'},
+    '.yml':    {'color': GRAY_LIGHT, 'icon': '🧾'},
+    '.yaml':   {'color': GRAY_LIGHT, 'icon': '🧾'},
+    '.tex':    {'color': GRAY_LIGHT, 'icon': '📜'},
+
+    # Logs
+    '.log':    {'color': GRAY_DIM, 'icon': '📜'},
+
+    # Physics
+    '.lhe':    {'color': CYAN, 'icon': '⚛️'},
+    '.root':   {'color': GRAY_LIGHT, 'icon': '🌳'},
+
+    # Archives / Compressed
+    '.zip':    {'color': RED_BOLD, 'icon': '📦'},
+    '.gz':     {'color': RED_BOLD, 'icon': '📦'},
+    '.xz':     {'color': RED_BOLD, 'icon': '📦'},
+    '.tar':    {'color': RED_BOLD, 'icon': '📦'},
+    '.tgz':    {'color': RED_BOLD, 'icon': '📦'},
+    '.tar.gz': {'color': RED_BOLD, 'icon': '📦'},
+
+    # Packages / System Installers
+    '.deb':    {'color': MAGENTA_BOLD, 'icon': '📦'},
+    '.rpm':    {'color': MAGENTA_BOLD, 'icon': '📦'},
+    '.pkg':    {'color': MAGENTA_BOLD, 'icon': '📦'},
+    '.iso':    {'color': MAGENTA_BOLD, 'icon': '💽'},
+
+    # Web / HTML
+    '.html':   {'color': CYAN, 'icon': '🌐'},
+    '.htm':    {'color': CYAN, 'icon': '🌐'},
+
+    # Docs
+    '.pdf':    {'color': MAGENTA_BOLD, 'icon': '📕'},
+
+    # Images 
+    '.png':    {'color': DEFAULT, 'icon': '🖼 '},
+    '.jpg':    {'color': DEFAULT, 'icon': '🖼 '},
+    '.jpeg':   {'color': DEFAULT, 'icon': '🖼 '},
+    '.svg':    {'color': DEFAULT, 'icon': '🖼 '},
+    '.webp':   {'color': DEFAULT, 'icon': '🖼 '},
+    '.gif':    {'color': DEFAULT, 'icon': '🖼 '},
+    '.bmp':    {'color': DEFAULT, 'icon': '🖼 '},
+    '.tiff':   {'color': DEFAULT, 'icon': '🖼 '},
+}
+
+# ====== DON'T TOUCH BELOW =========
+
+def human_readable_size(size):
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size < 1024: return f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} PB"
+
+def colorize(name, is_dir=False):
+    if is_dir:
+        color = HID_DIR_COLOR if name.startswith('.') else DIR_COLOR
+        return f"{DIR_ICON}{color} {name}{DEFAULT}"
+    if name.endswith('~') or name.endswith('#'): return f"{TMP_ICON}{TMP_COLOR} {name}{DEFAULT}"
+    if name.startswith('.') and not is_dir:      return f"{HID_FILE_ICON}{HID_FILE_COLOR} {name}{DEFAULT}"
+    for ext, style in STYLE.items():
+        if name.endswith(ext):
+            return f"{style['icon']}{style['color']} {name}{DEFAULT}"
+    return f"{UNK_FILE_ICON} {name}{DEFAULT}"
+
+def list_dir(path='.', show_all=False, filter_ext=None):
+    matched = glob.glob(path)
+    entries = []
+
+    for item in matched:
+        if os.path.isdir(item):
+            names = os.listdir(item)
+            if not show_all:    names = [e for e in names if not e.startswith('.')]
+            for name in names:
+                full = os.path.join(item, name)
+                if os.path.isdir(full) or os.path.isfile(full):
+                    try:
+                        st = os.stat(full)
+                        entries.append((full, st))
+                    except FileNotFoundError: continue
+        elif os.path.isfile(item):
+            if filter_ext and filter_ext.lower() not in item.lower(): continue
+            try:
+                st = os.stat(item)
+                entries.append((item, st))
+            except FileNotFoundError: continue
+
+    if filter_ext:
+        entries = [(f, st) for (f, st) in entries if filter_ext.lower() in f.lower()]
+        entries = [e for e in entries if os.path.isfile(e[0])]  # only files if filtered
+
+    dirs = [e for e in entries if os.path.isdir(e[0])]
+    files = [e for e in entries if os.path.isfile(e[0])]
+    return sorted(dirs), sorted(files)
+
+def truncate_name(name, max_len):
+    ext = os.path.splitext(name)[1]
+    name_base = name[:-len(ext)] if ext else name
+    ellipsis = "..."
+    was_truncated = False
+
+    if len(name) > max_len:
+        was_truncated = True
+        budget = max_len - len(ellipsis) - len(ext)
+        if budget <= 0:
+            # emergency fallback: truncate from start, but keep extension
+            name = name[:max_len - len(ext)] + ext
+        else:
+            first_len = budget // 2
+            last_len = budget - first_len
+            first_part = name_base[:first_len]
+            last_part = name_base[-last_len:]
+            name = first_part + ellipsis + last_part + ext
+            
+    return name, was_truncated
+
+def strip_ansi(s):
+    return re.sub(r'\x1b\[[0-9;]*m', '', s)
+
+def visual_len(s):
+    return wcswidth(strip_ansi(s))
+    #return len(strip_ansi(s))
+
+def print_columns(items, width=80):
+    if not items: return
+    col_gap = 4
+    max_name_len = 30  # limit for truncation
+
+    display_items = []
+    for item in items:
+        match = re.match(r'^(\W+)(\033\[[0-9;]+m)? (.+?)(\033\[0m)?(\s\[[^\]]+\])?$', item)
+        final_str = item
+        if match:
+            icon = match.group(1)
+            color = match.group(2) or ''
+            name = match.group(3)
+            size_part = match.group(5) or ''
+            raw_name, was_truncated = truncate_name(name, max_name_len)
+            raw = f"{icon}{color} {raw_name}{DEFAULT}{size_part}"
+            final_str = raw
+            if was_truncated: final_str += ' '
+            
+        display_items.append(final_str)
+
+    ncols = max(1, len(display_items))
+    while ncols > 0:
+        nrows = (len(display_items) + ncols - 1) // ncols
+        col_widths = []
+        for c in range(ncols):
+            col_items = [display_items[r + c * nrows] for r in range(nrows) if (r + c * nrows) < len(display_items)]
+            col_width = max((visual_len(s) for s in col_items), default=0) + col_gap
+            col_widths.append(col_width)
+        if sum(col_widths) <= width or ncols == 1: break
+        ncols -= 1
+
+    for r in range(nrows):
+        row_items = []
+        for c in range(ncols):
+            i = r + c * nrows
+            if i < len(display_items):
+                s = display_items[i]
+                pad = col_widths[c] - visual_len(s)
+                row_items.append(s + ' ' * pad)
+        print(''.join(row_items))
+
+def hline(): print("-"*80)
+
+def print_entry_long(path, st, is_dir):
+    perms = stat.filemode(st.st_mode)
+    user = pwd.getpwuid(st.st_uid).pw_name
+    group = grp.getgrgid(st.st_gid).gr_name
+    size = human_readable_size(st.st_size).rjust(9)
+    mtime = time.strftime("%b %d %H:%M", time.localtime(st.st_mtime))
+    name = os.path.basename(path)
+    colored = colorize(name, is_dir=is_dir)
+    print(f"{perms} {user:8} {group:8} {size} {mtime} {colored}")
+
+def print_entry_inline(path, st, is_dir):
+    size_str = human_readable_size(st.st_size)
+    name = os.path.basename(path)
+    colored = colorize(name, is_dir=is_dir)
+    if is_dir: return f"{colored}"
+    else :     return f"{colored} [{size_str}]"
+
+def main():
+    parser = argparse.ArgumentParser(description="Colorized ls with particle physics flair")
+    parser.add_argument("-a", "--all", action="store_true", help="include hidden files")
+    parser.add_argument("-l", "--long", action="store_true", help="show detailed list with sizes (like ls -l)")
+    parser.add_argument("-s", "--sortby", choices=["a", "alphabet", "n", "alphanumeric", "size"], help="sorting method")
+    parser.add_argument("--filter", type=str, help="show only files with the given extension")
+
+    args, remaining = parser.parse_known_args()
+
+    paths = []
+    for p in remaining: paths += glob.glob(p)
+    if not paths:       paths = ["."]
+    
+    for path in paths:
+        dirs, files = list_dir(path=path, show_all=args.all, filter_ext=args.filter)
+
+        if args.sortby in ("n", "alphanumeric"):
+            keyfunc = lambda x: [int(t) if t.isdigit() else t.lower() for t in re.split(r'([0-9]+)', os.path.basename(x[0]))]
+            files.sort(key=keyfunc)
+            dirs.sort(key=keyfunc)
+        elif args.sortby in ("s", "size"):
+            print("Sorting files by size.")
+            files.sort(key=lambda x: x[1].st_size, reverse=True)
+
+        header = f"==> {YELLOW_BOLD}{os.path.abspath(path)} {CYAN}(ndirs = {len(dirs)}, nfiles = {len(files)}){DEFAULT}"
+        
+        if args.long:
+            hline()
+            print(header)
+            print(f"{'PERMS':<10} {'USER':8} {'GROUP':8} {'SIZE':>9} {'MODIFIED':12} NAME")
+            for d, st in dirs:  print_entry_long(d, st, is_dir=True)
+            for f, st in files: print_entry_long(f, st, is_dir=False)
+        else:
+            print("\n" + header)
+            display = [print_entry_inline(d, st, is_dir=True) for d, st in dirs]
+            display += [print_entry_inline(f, st, is_dir=False) for f, st in files]
+            term_width = shutil.get_terminal_size((80, 20)).columns
+            print_columns(display, width=term_width)
+
+    print()
+        
+if __name__ == "__main__": main()
