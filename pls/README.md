@@ -18,6 +18,15 @@ A Python-based alternative to the `ls` command, designed for better readability 
 - ⚙️ Hybrid CLI: combines `sys.argv` and `argparse` for flexible usage
 - 📋 `-l` for detailed view: PERMS, USER, GROUP, SIZE, MODIFIED, NAME
 
+## ⚙️ Installation
+```bash
+cd ~/                        # Go to home area
+pip install wcwidth          # Python3 module 
+wget https://github.com/phazarik/tools/releases/download/pls1.0/pls
+chmod +x ~/pls               # Make it executable
+sudo ln -sf "$HOME/pls" /usr/local/bin/pls  # Create a symbolic link
+```
+
 ## 🧪 Usage
 ```bash
 pls                   # Basic listing in columns
@@ -29,14 +38,6 @@ pls --sortby n        # Alphanumeric sort: 1, 2, ..., 10 (instead of 1, 10, 2)
 pls dir1 dir2         # List contents of multiple directories (supports wildcards)
 ```
 
-## ⚙️ Installation
-```bash
-cd ~/                        # Go to home area
-pip install wcwidth          # Python3 module 
-wget https://github.com/phazarik/tools/releases/download/pls1.0/pls
-chmod +x ~/pls               # Make it executable
-sudo ln -sf "$HOME/pls" /usr/local/bin/pls  # Create a symbolic link
-```
 ----
 ### 🎁 Bonus info for emacs users
 For proper emoji rendering in Emacs, add the following to your `~/.emacs`file.
