@@ -1,6 +1,6 @@
 # `pls` : A Customizable, Emoji-Friendly `ls` Replacement
 
-[![Python 3.x](https://img.shields.io/badge/python-3.x-blue.svg)](https://www.python.org/) [![wcwidth](https://img.shields.io/badge/wcwidth-lightgrey)](https://pypi.org/project/wcwidth/)
+[![Python 3.x](https://img.shields.io/badge/python-3.x-blue.svg)](https://www.python.org/) [![wcwidth](https://img.shields.io/badge/wcwidth-darkgray)](https://pypi.org/project/wcwidth/)
 
 A Python-based alternative to the `ls` command, designed for better readability and customization using ANSI colors and emojis. Works reliably across Linux, WSL, and mounted file systems.
 
