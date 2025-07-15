@@ -9,9 +9,6 @@ This is a collection of terminal-based utilities, each designed to streamline sp
 Tools to extract generator-level cross sections from CMS datasets using the `GenXSecAnalyzer`.  
 The workflow queries DAS for MiniAODs, parses logs, and extracts cross-section values, working within a CMSSW environment. Ideal for validating MC samples or preparing configs for private production.
 
-[![Download bulksubmission.py](https://img.shields.io/badge/Download%20bulksubmission.py-blue?style=for-the-badge&logo=github)](https://github.com/phazarik/tools/releases/download/lxlpus-v1.0/bulksubmission.py)  
-[![Download find_xsec_fromDAS.py](https://img.shields.io/badge/Download%20find_xsec_fromDAS.py-blue?style=for-the-badge&logo=github)](https://github.com/phazarik/tools/releases/download/lxlpus-v1.0/find_xsec_fromDAS.py)
-
 ```bash
 wget https://github.com/phazarik/tools/releases/download/lxplus-v1.0/bulksubmission.py
 wget https://github.com/phazarik/tools/releases/download/lxplus-v1.0/find_xsec_fromDAS.py
@@ -25,9 +22,6 @@ wget https://github.com/phazarik/tools/releases/download/lxplus-v1.0/find_xsec_f
 
 A two-step workflow to directly download files from CMS DAS into your lxplus area using `xrdcp`.  
 Useful for one-off studies or selective file access without relying on CRAB.
-
-[![Download makelist.py](https://img.shields.io/badge/Download%20makelist.py-blue?style=for-the-badge&logo=github)](https://github.com/phazarik/tools/releases/download/lxlpus-v1.0/makelist.py)  
-[![Download xrdcp_files.py](https://img.shields.io/badge/Download%20xrdcp_files.py-blue?style=for-the-badge&logo=github)](https://github.com/phazarik/tools/releases/download/lxlpus-v1.0/xrdcp_files.py)
 
 ```bash
 wget https://github.com/phazarik/tools/releases/download/lxplus-v1.0/makelist.py
